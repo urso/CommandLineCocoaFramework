@@ -1,24 +1,37 @@
-CommandLineCocoaFramework
+* CommandLineCocoaFramework
 
-This creates a minimal Cocoa framework -- called Min -- from the command line,
-using the Nu make tool, nuke. You can find out more about Nu at 
-http://github.com/timburks/nu.
+This project shows how to build Cocoa frameworks from the command line. The
+goal is to do this with as many make tools as folks find useful. At present,
+we have files for:
+- nuke 
+- rake
 
-The framework contains a single class, Min, with 
-a single method -yo, just for verification. In addition, framework initialization
-seems to require the existence of an initialization C function, so I just put that
+Details for these are in their own sections below. Push requests for other 
+make tools encouraged.
+
+* Min, the minimal framework
+
+For illustration, we use a minimal framework, called Min. It contains one Objective-C class, 
+Min, with a single method -yo, which we call for verification. In addition, framework 
+initialization seems to require an C initialization function.  For simplicity, that's
 in the class file.
 
-From what I can tell, nuke is not as fully baked as, say, rake. On the other
-hand, it has built-in support for frameworks, and did the job in 11 lines of
-code. Not too shabby.
+There is also an Xcode project for Min, for comparison & convenience.
 
-If you "nuke install", this will install under "/Library/Frameworks". nuke
-seems to occasionally segfault when running on top of a dirty framework,
-so in that case, just "nuke clobber; nuke install".
+* Defining the builds
 
-My only bar for success was whether I could get the framework to successfully
-load in the nu & macruby shells, nush & macirb. Yay! Here's the results:
+The build should have three targets: build, install & clean, though they don't need
+those exact names. The default target, the equivalent of "make", should do a build. 
+
+Installs should go to /Library/Fromeworks. Since some folks are picky about what goes
+there, this should be parameterized someplace obvious.
+
+* Defining success
+
+At present, the only bar for success is whether the framework successfully
+loads in the nu & macruby shells, nush & macirb. These are good bookend tests,
+because they sit on both sides of garbage collection. Here's the results for the
+nuke build:
 
 gort:~ clay$ macirb
 irb(main):001:0> framework "Min"
@@ -32,8 +45,45 @@ t
 % (Min yo)
 "'Sup. I'm the Min framework."
 
-I welcome other ways to do this, e.g. make, rake, macrake, etc. Send me
-a push request.
+This should likely be automated, and there are surely more ways to test this.
 
-Clay Bridges
-21 Sep 2010
+* TODO
+
+While the Min example is instructive, real frameworks have more stuff, and more wrinkles. 
+To be complete, I'd like to have more examples, including perhaps a simple but complete
+example called Max, perhaps with some of the following
+
+- resources
+- an icon
+- public/private header file distinction
+- sub frameworks
+
+In addition, we might want examples of frameworks written in other languges, e.g. 
+
+- C++
+- F-Script
+- MacRuby
+- Nu
+- Objective-C++
+
+We might also want to automate the testing somehow.
+
+* nuke (script by Clay Bridges)
+
+nuke is the make tool for Nu. You can find out more about Nu at 
+http://github.com/timburks/nu.
+
+From what I can tell, nuke is not as fully baked as, say, rake. On the other
+hand, it has built-in support for frameworks, and did the job in 11 lines of
+code. Not too shabby.
+
+nuke seems to occasionally segfault when running on top of a dirty framework,
+so in that case, just "nuke clobber; nuke install".
+
+* rake (script by Steffen Blah)
+
+Rake can describe build rules and collect dependencies dynamically, which most
+find much easier then make.
+
+The Rakefile will autmotically find dependencies of every object file to be
+generated. So no 'rake clean' will be needed for incremental development.
