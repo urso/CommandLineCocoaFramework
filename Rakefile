@@ -1,5 +1,7 @@
 # TODO: add support for Resources, C++, Objective-C++ and Sub-Frameworks
+require 'rails'
 
+INSTALL_DIR = "/Library/Frameworks"
 FRAMEWORK_NAME = "Min"
 FRAMEWORK_VERSION = "A"
 
@@ -88,3 +90,6 @@ task :clean do
     sh "rm -f #{OBJ}"
 end
 
+task 'install' => 'framework' do
+    sh "cp -r #{FRAMEWORK_DIR} #{INSTALL_DIR}"
+end
