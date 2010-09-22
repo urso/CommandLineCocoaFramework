@@ -1,13 +1,16 @@
 CommandLineCocoaFramework
 
 This creates a minimal Cocoa framework -- called Min -- from the command line,
-using the Nu make tool, nuke. The framework contains a single class, Min, with 
+using the Nu make tool, nuke. You can find out more about Nu at 
+http://github.com/timburks/nu.
+
+The framework contains a single class, Min, with 
 a single method -yo, just for verification. In addition, framework initialization
 seems to require the existence of an initialization C function, so I just put that
 in the class file.
 
 From what I can tell, nuke is not as fully baked as, say, rake. On the other
-hand, it has built-in support for frameworks, and did the job in 10 lines of
+hand, it has built-in support for frameworks, and did the job in 11 lines of
 code. Not too shabby.
 
 If you "nuke install", this will install under "/Library/Frameworks". nuke
@@ -15,7 +18,7 @@ seems to occasionally segfault when running on top of a dirty framework,
 so in that case, just "nuke clobber; nuke install".
 
 My only bar for success was whether I could get the framework to successfully
-load in the nu & macruby shells, nush & macirb. Here's the results:
+load in the nu & macruby shells, nush & macirb. Yay! Here's the results:
 
 gort:~ clay$ macirb
 irb(main):001:0> framework "Min"
