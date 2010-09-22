@@ -1,5 +1,4 @@
 # TODO: add support for Resources, C++, Objective-C++ and Sub-Frameworks
-require 'rails'
 
 INSTALL_DIR = "/Library/Frameworks"
 FRAMEWORK_NAME = "Min"
