@@ -68,7 +68,7 @@ In addition, we might want examples of frameworks written in other languges, e.g
 
 We might also want to automate the testing somehow.
 
-* nuke (script by Clay Bridges)
+* nuke (script by Clay Bridges (diffengr))
 
 nuke is the make tool for Nu. You can find out more about Nu at 
 http://github.com/timburks/nu.
@@ -80,7 +80,7 @@ code. Not too shabby.
 nuke seems to occasionally segfault when running on top of a dirty framework,
 so in that case, just "nuke clobber; nuke install".
 
-* rake (script by Steffen Blah)
+* rake (script by Steffen Siering (urso))
 
 Rake can describe build rules and collect dependencies dynamically, which most
 find much easier then make.
