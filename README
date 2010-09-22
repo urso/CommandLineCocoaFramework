@@ -1,3 +1,23 @@
+
+CommandLineCocoaFramework
+
+Test building Frameworks from command line using rake. I've chosen rake over
+make, because one can describe build rules and collect dependencies dynamicaly
+in rake much easier then in make.
+
+The Rakefile will autmotically find dependencies of every object file to be
+generated. So no 'rake clean' will be needed for incremental development.
+
+TODO: Add support for
+- Resource
+- sub frameworks
+- C++
+- Ojective-C++
+
+
+Origional README 
+===============================================================================
+
 CommandLineCocoaFramework
 
 This creates a minimal Cocoa framework -- called Min -- from the command line,
