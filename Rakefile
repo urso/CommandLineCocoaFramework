@@ -1,16 +1,21 @@
 # TODO: add support for Resources, C++, Objective-C++ and Sub-Frameworks
 
+CC = "clang"
+
 FRAMEWORK_NAME = "Min"
 FRAMEWORK_VERSION = "A"
 INSTALL_DIR = "/Library/Frameworks"
+USE_FRAMEWORKS = ['Cocoa', 'Foundation']
 
 OBJC_FLAGS = "-fobjc-gc" # so i can load the framework with macruby
 CC_FLAGS = "" # -fobjc-gc not allowed for C-files...
 LD_FLAGS = ""
 
-COPY_HEADERS = false
+COPY_HEADERS = true
 
 # edit below, only if you know what you are doing :)
+
+LD_FRAMEWORKS = USE_FRAMEWORKS.map{|f| '-framework '+f}.join(' ')
 
 FRAMEWORK_DIR = "#{FRAMEWORK_NAME}.framework"
 FRAMEWORK_VERSIONS_DIR = "#{FRAMEWORK_DIR}/Versions"
@@ -20,28 +25,24 @@ FRAMEWORK_VERSION_DIR = "#{FRAMEWORK_DIR}/Versions/#{FRAMEWORK_VERSION}"
 FRAMEWORK_VERSION_DYNLIB = "#{FRAMEWORK_VERSION_DIR}/#{FRAMEWORK_NAME}"
 FRAMEWORK_DYNLIB = "#{FRAMEWORK_DIR}/#{FRAMEWORK_NAME}"
 
-@@SRC = []
-@@OBJ = []
-@@HEADERS = []
-@@INCLUDE_DIRS = '' 
-
 task :default => ['framework']
 
 task :create_framework_targets do
-    @@SRC = FileList["{,*/**/}*.c", "{,*/**/}*.m"]
-    @@OBJ = @@SRC.map { |f| 'build/' + File.basename(f) + '.o' }
-    @@HEADERS = FileList["{,*/**/}*.h"].reject do |h|
+    SRC = FileList["**{,/*/**/}*.c", "**{,/*/**/}*.m"]
+    DEPS = SRC.map { |f| 'build/' + File.basename(f) + '.d' }
+    OBJ = SRC.map { |f| 'build/' + File.basename(f) + '.o' }
+    HEADERS = FileList["**{,/*/**/}*.h"].reject do |h|
         h =~ /^#{FRAMEWORK_NAME}\.framework/
     end
-    @@INCLUDE_DIRS = @@HEADERS.map {|h| File.dirname(h) }.uniq.map {|d| '-I'+d }.join(' ')
+    INCLUDE_DIRS = HEADERS.map {|h| File.dirname(h) }.uniq.map {|d| '-I'+d }.join(' ')
 
     directory "build"
     # create Framework and Version directory
     directory FRAMEWORK_DIR
     directory FRAMEWORK_VERSION_DIR
 
-    file FRAMEWORK_VERSION_DYNLIB => (@@OBJ + [FRAMEWORK_DIR, FRAMEWORK_VERSION_DIR]) do
-        sh "gcc -dynamiclib -framework Foundation #{LD_FLAGS} -o #{FRAMEWORK_VERSION_DYNLIB} #{@@OBJ}"
+    file FRAMEWORK_VERSION_DYNLIB => (OBJ + [FRAMEWORK_DIR, FRAMEWORK_VERSION_DIR]) do
+        sh "gcc -dynamiclib #{LD_FRAMEWORKS} #{LD_FLAGS} -o #{FRAMEWORK_VERSION_DYNLIB} #{OBJ}"
     end
 
     file FRAMEWORK_CURRENT => [FRAMEWORK_VERSION_DIR] do
@@ -54,7 +55,6 @@ task :create_framework_targets do
 
     if COPY_HEADERS
         FRAMEWORK_HEADERS = "#{FRAMEWORK_VERSION_DIR}/Headers"
-        FRAMEWORK_HEADERS_LINK = "#{FRAMEWORK_DIR}/Headers"
 
         directory FRAMEWORK_HEADERS
         file FRAMEWORK_HEADERS_LINK => [FRAMEWORK_HEADERS] do
@@ -62,7 +62,7 @@ task :create_framework_targets do
         end
 
         task :copy_headers => [FRAMEWORK_HEADERS] do 
-            @@HEADERS.each do |h|
+            HEADERS.each do |h|
                 if not File.exists? "#{FRAMEWORK_HEADERS}/#{h}"
                     sh "cp #{h} #{FRAMEWORK_HEADERS}"
                 end
@@ -71,16 +71,29 @@ task :create_framework_targets do
     end
 
     # create file dependencies...
-    @@SRC.zip(@@OBJ) do |src,obj|
-        cmd = "gcc #{@@INCLUDE_DIRS} -M -MM #{src}"
-        dep = ["build"] + `#{cmd}`.delete("\\\\\n").sub(/.*:\s*/,'').split(/\s+/)
+    SRC.zip(DEPS, OBJ) do |src,depfile,obj|
+        deps = ""
+        if File.exists?(depfile)
+            deps = File.read(depfile).split(/\s+/)
+        else
+            deps = [src]
+        end
+
+        file depfile => ['build'] + deps do
+            File.open(depfile, "w") do |f|
+                cmd = "gcc #{INCLUDE_DIRS} -M -MM #{src}"
+                depstr = `#{cmd}`.delete("\\\\\n").sub(/.*:\s*/,'')
+                f.write(depstr)
+            end
+        end
+
         if File.extname(src) == '.c' 
-            file obj => dep do
-                sh "gcc #{@@INCLUDE_DIRS} #{CC_FLAGS} -c -o #{obj} #{src}"
+            file obj => depfile do
+                sh "#{CC} #{INCLUDE_DIRS} #{CC_FLAGS} -c -o #{obj} #{src}"
             end
         else
-            file obj => dep do
-                sh "gcc #{@@INCLUDE_DIRS} #{OBJC_FLAGS} -c -o #{obj} #{src}"
+            file obj => depfile do
+                sh "#{CC} #{INCLUDE_DIRS} #{OBJC_FLAGS} -c -o #{obj} #{src}"
             end
         end
     end
@@ -88,6 +101,7 @@ end
 
 FRAMEWORK_DEPENDENCIES = [FRAMEWORK_VERSION_DYNLIB, FRAMEWORK_CURRENT, FRAMEWORK_DYNLIB]
 if COPY_HEADERS
+    FRAMEWORK_HEADERS_LINK = "#{FRAMEWORK_DIR}/Headers"
     FRAMEWORK_DEPENDENCIES << :copy_headers << FRAMEWORK_HEADERS_LINK
 end
 
