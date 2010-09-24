@@ -54,19 +54,21 @@ task :create_framework_targets do
     end
 
     if COPY_HEADERS
-        FRAMEWORK_HEADERS = "#{FRAMEWORK_VERSION_DIR}/Headers"
+        FRAMEWORK_HEADERS_DIR = "#{FRAMEWORK_VERSION_DIR}/Headers"
 
-        directory FRAMEWORK_HEADERS
-        file FRAMEWORK_HEADERS_LINK => [FRAMEWORK_HEADERS] do
+        directory FRAMEWORK_HEADERS_DIR
+        file FRAMEWORK_HEADERS_LINK => [FRAMEWORK_HEADERS_DIR] do
             sh "cd #{FRAMEWORK_DIR} && ln -s Versions/Current/Headers Headers"
         end
 
-        task :copy_headers => [FRAMEWORK_HEADERS] do 
-            HEADERS.each do |h|
-                if not File.exists? "#{FRAMEWORK_HEADERS}/#{h}"
-                    sh "cp #{h} #{FRAMEWORK_HEADERS}"
-                end
+        FRAMEWORK_HEADERS = HEADERS.map {|h| "#{FRAMEWORK_HEADERS_DIR}/#{File.basename(h)}"}
+
+        FRAMEWORK_HEADERS.zip(HEADERS) do |fh, h|
+            file fh => [FRAMEWORK_HEADERS_DIR, h] do
+                sh "cp #{h} #{fh}"
             end
+        end
+        task :copy_headers => FRAMEWORK_HEADERS do 
         end
     end
 
