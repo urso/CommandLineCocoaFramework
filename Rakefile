@@ -12,6 +12,7 @@ CC_FLAGS = "" # -fobjc-gc not allowed for C-files...
 LD_FLAGS = ""
 
 COPY_HEADERS = true
+COMPILE_PARALLEL = true
 
 # edit below, only if you know what you are doing :)
 
@@ -41,7 +42,13 @@ task :create_framework_targets do
     directory FRAMEWORK_DIR
     directory FRAMEWORK_VERSION_DIR
 
-    file FRAMEWORK_VERSION_DYNLIB => (OBJ + [FRAMEWORK_DIR, FRAMEWORK_VERSION_DIR]) do
+    if COMPILE_PARALLEL
+        multitask :compile => OBJ
+    else
+        task :compile => OBJ
+    end
+
+    file FRAMEWORK_VERSION_DYNLIB => [:compile, FRAMEWORK_DIR, FRAMEWORK_VERSION_DIR] do
         sh "gcc -dynamiclib #{LD_FRAMEWORKS} #{LD_FLAGS} -o #{FRAMEWORK_VERSION_DYNLIB} #{OBJ}"
     end
 
@@ -68,8 +75,8 @@ task :create_framework_targets do
                 sh "cp #{h} #{fh}"
             end
         end
-        task :copy_headers => FRAMEWORK_HEADERS do 
-        end
+
+        multitask :copy_headers => FRAMEWORK_HEADERS
     end
 
     # create file dependencies...
