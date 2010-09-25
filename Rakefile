@@ -84,15 +84,21 @@ task :create_framework_targets do
         deps = ""
         if File.exists?(depfile)
             deps = File.read(depfile).split(/\s+/)
+            if deps.any? { |d| (not HEADERS.member?(d)) && (not SRC.member?(d)) }
+                File.delete(depfile)
+                deps = [src]
+            end
         else
             deps = [src]
         end
 
         file depfile => ['build'] + deps do
-            File.open(depfile, "w") do |f|
-                cmd = "gcc #{INCLUDE_DIRS} -M -MM #{src}"
-                depstr = `#{cmd}`.delete("\\\\\n").sub(/.*:\s*/,'')
-                f.write(depstr)
+            cmd = "gcc #{INCLUDE_DIRS} -M -MM #{src}"
+            depstr = `#{cmd}`.delete("\\\\\n").sub(/.*:\s*/,'')
+            if 0 == $?.exitstatus
+                File.open(depfile, "w") do |f|
+                    f.write(depstr)
+                end
             end
         end
 
